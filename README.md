@@ -36,6 +36,30 @@ Server config via env: `DATABASE_URL` (Postgres, shared by app tables and the
 LangGraph checkpointer), `ANTHROPIC_API_KEY`, `MODEL_ID` (defaults to a cheap
 fast model class). See `.env.example`.
 
+## Content factory & evals
+
+The offline factory proposes word candidates, runs deterministic verifiers
+(blocklist, ambiguity, embedding-distance band per difficulty), and calibrates
+difficulty from historical win rates, then persists a versioned, unshipped pack:
+
+```sh
+python -m factory.run --category Food Animals --difficulty easy medium   # inspect
+python -m factory.run --persist                                          # write a pack
+```
+
+`evals/` are CI gates, run on any change to prompts, validators, or packs:
+`clue_leak/` proves the audit accepts zero leaking clues on the probe set, and
+`pack_quality/` proves the verifiers accept clean words and reject bad ones.
+Run locally with `make evals`.
+
+## Telemetry, cost, and tracing
+
+Every AI clue and vote writes to the `telemetry` table (tokens, model, computed
+cost, audit retries, fallback count, vote rationales, reconnects). `GET
+/admin/cost[?room=CODE]` rolls it up for a cost + reconnect-rate dashboard; the
+game loop never reads it. Set `LANGSMITH_TRACING=true` (+ `LANGSMITH_API_KEY`)
+to trace every graph step — traces are tagged with the room code.
+
 ## Architecture in one paragraph
 
 The server is authoritative. One LangGraph instance per room (`thread_id` =

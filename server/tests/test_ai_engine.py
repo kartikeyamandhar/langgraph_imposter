@@ -45,6 +45,36 @@ async def lobby_with_ai(engine: GameEngine, humans: int = 2, ais: int = 2):
     return await engine.snapshot(ROOM)
 
 
+async def resolve_round(engine: GameEngine, state, human_ids):
+    """Drive a started round to a terminal phase: submit pending human clues,
+    end discussion, then vote pending humans through any re-vote until the vote
+    resolves, and answer an AI guess. Robust against AI-vote ties."""
+    while state["phase"] == "clue":
+        active = state["speaking_order"][state["clue_index"]]
+        if active in human_ids:
+            state = await engine.dispatch(ROOM, {"type": "clue", "actor": active, "text": "a hint"})
+    if state["phase"] == "discussion":
+        state = await engine.dispatch(ROOM, {"type": "end_discussion", "actor": human_ids[0]})
+
+    while state["phase"] == "vote":
+        if state["revote"]:
+            target = state["revote_candidates"][0]
+        else:
+            target = next(p["id"] for p in state["players"])
+        pending = [h for h in human_ids if h not in state["votes"]]
+        if not pending:
+            break
+        voter = pending[0]
+        choice = target if target != voter else state["players"][-1]["id"]
+        state = await engine.dispatch(ROOM, {"type": "vote", "actor": voter, "target": choice})
+
+    if state["phase"] == "imposter_guess":
+        state = await engine.dispatch(
+            ROOM, {"type": "guess", "actor": state["eliminated"], "text": "x"}
+        )
+    return state
+
+
 class TestAISeats:
     async def test_host_adds_ai_seats(self, engine):
         state = await lobby_with_ai(engine)
@@ -81,7 +111,7 @@ class TestAISeats:
         await lobby_with_ai(engine, humans=2, ais=2)
         state = await engine.dispatch(ROOM, {"type": "start", "actor": "h0"})
 
-        # Submit any pending human clues until discussion.
+        # Submit pending human clues until discussion (AIs auto-fill theirs).
         while state["phase"] == "clue":
             active = state["speaking_order"][state["clue_index"]]
             state = await engine.dispatch(
@@ -93,29 +123,16 @@ class TestAISeats:
         state = await engine.dispatch(ROOM, {"type": "end_discussion", "actor": "h0"})
         assert state["phase"] == "vote"
         # AIs vote automatically; only humans remain pending.
-        ai_ids = {"ai0", "ai1"}
-        assert ai_ids <= set(state["votes"].keys())
+        assert {"ai0", "ai1"} <= set(state["votes"].keys())
 
-        # Humans finish voting -> round resolves.
-        for h in ["h0", "h1"]:
-            if h not in state["votes"]:
-                state = await engine.dispatch(ROOM, {"type": "vote", "actor": h, "target": "ai0"})
-        assert state["phase"] in ("reveal", "imposter_guess", "match_end")
+        state = await resolve_round(engine, state, ["h0", "h1"])
+        assert state["phase"] in ("reveal", "match_end")
 
     async def test_precompute_registry_clears_on_reveal(self, engine):
         await lobby_with_ai(engine, humans=2, ais=2)
         state = await engine.dispatch(ROOM, {"type": "start", "actor": "h0"})
-        assert (ROOM, state["round_no"]) in engine.ai._precomputed
-        while state["phase"] == "clue":
-            active = state["speaking_order"][state["clue_index"]]
-            state = await engine.dispatch(ROOM, {"type": "clue", "actor": active, "text": "a hint"})
-        state = await engine.dispatch(ROOM, {"type": "end_discussion", "actor": "h0"})
         round_no = state["round_no"]
-        for h in ["h0", "h1"]:
-            if h not in state["votes"]:
-                state = await engine.dispatch(ROOM, {"type": "vote", "actor": h, "target": "ai0"})
-        if state["phase"] == "imposter_guess":
-            guesser = state["eliminated"]
-            state = await engine.dispatch(ROOM, {"type": "guess", "actor": guesser, "text": "x"})
+        assert (ROOM, round_no) in engine.ai._precomputed
+        state = await resolve_round(engine, state, ["h0", "h1"])
         assert state["phase"] in ("reveal", "match_end")
         assert (ROOM, round_no) not in engine.ai._precomputed

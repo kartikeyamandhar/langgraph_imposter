@@ -115,6 +115,18 @@ async def healthz() -> dict[str, str]:
     return {"status": "ok"}
 
 
+@app.get("/admin/cost")
+async def admin_cost(room: str | None = None):
+    """Cost + reliability rollup for the dashboard. Reads telemetry only."""
+    from dataclasses import asdict
+
+    from server.reports import cost_summary
+
+    async with app.state.sessions() as session:
+        summary = await cost_summary(session, room.upper() if room else None)
+    return {**asdict(summary), "reconnect_rate": summary.reconnect_rate}
+
+
 @app.post("/rooms", status_code=201)
 async def create_room(body: NameBody):
     engine: GameEngine = app.state.engine

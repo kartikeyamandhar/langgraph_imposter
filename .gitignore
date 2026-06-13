@@ -26,6 +26,11 @@ web/next-env.d.ts
 packs/*.json
 *.pack.json
 
+# Local dev SQLite database
+*.db
+*.db-journal
+*.sqlite3
+
 # Local agent instructions — never pushed
 CLAUDE.md
 

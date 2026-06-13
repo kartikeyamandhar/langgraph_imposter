@@ -14,6 +14,9 @@ dependencies = [
     "alembic>=1.13",
     "psycopg[binary]>=3.2",
     "pydantic>=2.7",
+    "greenlet>=3.0",  # required by SQLAlchemy's async engine
+    # SQLite fallback so dev and the offline test suite run without services
+    "aiosqlite>=0.20",
 ]
 
 [project.optional-dependencies]

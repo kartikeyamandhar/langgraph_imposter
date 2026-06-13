@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #131a26;
+  --color-bone: #e9e4d8;
+  --color-lobby: #4fb8a8;
+  --color-clue: #e8a33d;
+  --color-vote: #d14b57;
+  --color-reveal: #8b7fd4;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  background: var(--color-ink);
+  color: var(--color-bone);
+}
+
+/* Timers always use tabular numerals so the countdown doesn't jitter. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}

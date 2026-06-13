@@ -1,0 +1,60 @@
+[project]
+name = "blindspot"
+version = "0.1.0"
+description = "Blindspot: mobile-first social deduction party game with an AI game master, built on LangGraph."
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "langgraph>=0.2",
+    "langgraph-checkpoint-postgres>=2.0",
+    "langchain-anthropic>=0.3",
+    "langchain-core>=0.3",
+    "sqlalchemy>=2.0",
+    "alembic>=1.13",
+    "psycopg[binary]>=3.2",
+    "pydantic>=2.7",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "httpx>=0.27",
+    "ruff>=0.6",
+    "mypy>=1.11",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["server"]
+
+[tool.pytest.ini_options]
+testpaths = ["server/tests", "content-factory/tests"]
+pythonpath = [".", "content-factory"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["server/alembic/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = false
+check_untyped_defs = true
+warn_unused_ignores = true
+no_implicit_optional = true
+files = ["server", "content-factory/factory"]
+explicit_package_bases = true
+mypy_path = "content-factory"
+
+[[tool.mypy.overrides]]
+module = ["langgraph.*", "langchain_anthropic.*", "langchain_core.*"]
+ignore_missing_imports = true

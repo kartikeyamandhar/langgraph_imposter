@@ -66,6 +66,17 @@ def lobby(state: GameState) -> dict[str, Any]:
     if actor != state["host_id"]:
         return _err(actor, "Waiting for the host to start the game.")
 
+    if etype == "add_ai":
+        if len(players) >= MAX_PLAYERS:
+            return _err(actor, "Room is full (10 players).")
+        players.append(event["player"])
+        return {"players": players, "action_error": None}
+
+    if etype == "remove_ai":
+        target = event.get("target")
+        players = [p for p in players if not (p["id"] == target and p["is_ai"])]
+        return {"players": players, "action_error": None}
+
     if etype == "settings":
         settings = dict(state["settings"])
         if "discussion_seconds" in event:

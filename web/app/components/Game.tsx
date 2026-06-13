@@ -124,16 +124,35 @@ function Lobby({ state, me, send, accent }: ScreenProps) {
           <li key={p.id} className="flex items-center justify-between rounded-xl bg-bone/5 px-4 py-3">
             <span>
               {p.name}
+              {p.is_ai && <span className="text-reveal text-xs ml-2">AI</span>}
               {p.id === me && <span className="text-bone/40"> (you)</span>}
               {p.id === pub.host_id && <span className="text-lobby text-xs ml-2">host</span>}
             </span>
-            <span className={p.connected ? "text-lobby text-xs" : "text-bone/30 text-xs"}>
-              {p.connected ? "ready" : "away"}
-            </span>
+            {isHost && p.is_ai ? (
+              <button
+                onClick={() => send({ type: "remove_ai", target: p.id })}
+                className="text-bone/40 text-xs hover:text-vote"
+              >
+                remove
+              </button>
+            ) : (
+              <span className={p.connected ? "text-lobby text-xs" : "text-bone/30 text-xs"}>
+                {p.connected ? "ready" : "away"}
+              </span>
+            )}
           </li>
         ))}
       </ul>
-      <div className="mt-6">
+      <div className="mt-6 space-y-3">
+        {isHost && (
+          <button
+            onClick={() => send({ type: "add_ai" })}
+            disabled={pub.players.length >= 10}
+            className="w-full rounded-xl border border-reveal/60 px-4 py-3 text-reveal disabled:opacity-40"
+          >
+            Add an AI player
+          </button>
+        )}
         {isHost ? (
           <PrimaryButton
             accent={accent}
@@ -147,7 +166,7 @@ function Lobby({ state, me, send, accent }: ScreenProps) {
         ) : (
           <p className="text-center text-bone/50">Waiting for the host to start.</p>
         )}
-        {state.you.error && <p className="text-vote text-sm text-center mt-3">{state.you.error}</p>}
+        {state.you.error && <p className="text-vote text-sm text-center">{state.you.error}</p>}
       </div>
     </>
   );

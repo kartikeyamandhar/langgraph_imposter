@@ -1,6 +1,6 @@
 # ADR 001: The AI clue audit fails closed
 
-- Status: Proposed (stub — to be accepted when the audit ships in M2)
+- Status: Accepted (audit shipped in M2)
 - Date: 2026-06-12
 
 ## Context
@@ -30,3 +30,15 @@ force-pass path: a human can override a human, but nothing overrides the audit.
   are visible without reading transcripts.
 - The audit is pure Python over deterministic inputs, so it is unit-testable
   offline at zero API cost.
+
+## Implementation (M2)
+
+- `server/audit.py` is the audit; `server/ai/clue_agent.py` runs the
+  propose → audit → retry (max 3) → safe-fallback loop; `server/rhyme.py` and
+  `server/validators.py` back the deterministic checks.
+- The embedding band uses an injectable embedding interface
+  (`server/embeddings.py`). Production wires a semantic model; the offline
+  default is a deterministic stub, so band thresholds in `DIFFICULTY_BANDS`
+  are placeholders until calibrated against telemetry in M3.
+- Audit retries and fallback counts are written to the `telemetry` table so
+  prompt regressions are visible without reading transcripts.

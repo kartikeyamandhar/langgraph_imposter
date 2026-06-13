@@ -95,6 +95,8 @@ export interface Envelope<T = Record<string, unknown>> {
 export type ClientAction =
   | { type: "start" }
   | { type: "settings"; discussion_seconds?: number; win_mode?: WinMode; second_imposter?: boolean }
+  | { type: "add_ai" }
+  | { type: "remove_ai"; target: string }
   | { type: "clue"; text: string }
   | { type: "end_discussion" }
   | { type: "vote"; target: string }

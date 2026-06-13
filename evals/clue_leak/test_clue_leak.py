@@ -7,9 +7,11 @@ that the audit accepts fails the build.
 import pytest
 
 from evals.probes import CLEAN_CLUES, DETERMINISTIC_LEAKS, LeakProbe
-from server.audit import audit_clue
+from server.audit import DIFFICULTY_BANDS, audit_clue
 from server.embeddings import stub_embed
 from server.tests.helpers import band_embed
+
+_EASY_MID = sum(DIFFICULTY_BANDS["easy"]) / 2
 
 
 def test_zero_deterministic_leaks():
@@ -34,6 +36,6 @@ def test_embedding_too_close_is_rejected():
 def test_clean_clues_are_not_overblocked(probe: LeakProbe):
     # Place the clue mid-band so only the deterministic checks decide. A clean
     # clue must pass — proves we reject leaks without rejecting good clues.
-    embed = band_embed(probe.secret, probe.clue, sim=0.4)
+    embed = band_embed(probe.secret, probe.clue, sim=_EASY_MID)
     report = audit_clue(probe.clue, probe.secret, "easy", embed)
     assert report.passed, report.violations

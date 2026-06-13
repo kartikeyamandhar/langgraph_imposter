@@ -17,15 +17,18 @@ from server.embeddings import EmbedFn, similarity
 from server.rhyme import rhymes
 from server.validators import _tokens, simple_stem
 
-# (low, high) inclusive similarity band per difficulty. Calibrated against
-# telemetry in M3; these are conservative starting values. The upper bound is
-# the leak guard and is the one that must never be widened to pass a test.
+# (low, high) inclusive similarity band per difficulty, tuned for OpenAI
+# text-embedding-3-small cosine similarities. The upper bound is the leak guard
+# — a clue too close to the word is rejected; the lower bound keeps the clue
+# on-topic. Calibrated from live probes (see scripts), refine against telemetry
+# in M3. The upper bound must never be widened just to pass a test. Override
+# per-band at runtime by passing `bands` to audit_clue.
 DIFFICULTY_BANDS: dict[str, tuple[float, float]] = {
-    "easy": (0.10, 0.60),
-    "medium": (0.08, 0.55),
-    "hard": (0.05, 0.50),
+    "easy": (0.18, 0.44),
+    "medium": (0.16, 0.41),
+    "hard": (0.14, 0.38),
 }
-DEFAULT_BAND = (0.08, 0.55)
+DEFAULT_BAND = (0.16, 0.41)
 
 
 @dataclass
@@ -58,11 +61,13 @@ def audit_clue(
         violations.append("clue is empty")
     if len(tokens) > 3:
         violations.append(f"clue has {len(tokens)} words, max 3")
-    if secret in clue.lower():
+    # `secret` guards each check: an empty secret must never match (an empty
+    # string is a substring of everything), which would fail-close incorrectly.
+    if secret and secret in clue.lower():
         violations.append("clue contains the secret word")
-    if any(simple_stem(t) == secret_stem for t in tokens):
+    if secret and any(simple_stem(t) == secret_stem for t in tokens):
         violations.append("clue is a grammatical form of the secret word")
-    if any(rhymes(t, secret) for t in tokens):
+    if secret and any(rhymes(t, secret) for t in tokens):
         violations.append("clue rhymes with the secret word")
 
     sim = similarity(embed, clue, secret_word) if tokens else 0.0

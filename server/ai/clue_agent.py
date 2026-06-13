@@ -5,6 +5,7 @@ The propose step is the only LLM seam and is injectable, so the offline suite
 runs without a key. Token counts flow out for cost telemetry.
 """
 
+import asyncio
 import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
@@ -21,7 +22,8 @@ class ClueRequest:
     role: str  # "imposter" | "civilian"
     category: str
     difficulty: str
-    secret_word: str | None  # None for the imposter — they never see the word
+    secret_word: str  # the real word — used by the audit only; the imposter's
+    # prompt never includes it, so the model still sees only the category.
 
 
 @dataclass
@@ -79,12 +81,14 @@ def safe_fallback(category: str, secret_word: str, embed: EmbedFn) -> tuple[str,
 async def produce_clue(
     req: ClueRequest, propose: ProposeFn, embed: EmbedFn
 ) -> ClueResult:
-    secret = req.secret_word or ""
+    secret = req.secret_word
     tokens_in = tokens_out = 0
     last_report: AuditReport | None = None
     violations: list[str] = []
 
     for attempt in range(MAX_RETRIES + 1):
+        # The imposter's prompt omits the word (they only know the category);
+        # the audit below still checks the real word to catch a coincidental leak.
         if req.role == "imposter":
             user = imposter_clue_prompt(req.category, violations)
         else:
@@ -95,7 +99,8 @@ async def produce_clue(
         tokens_out += proposal.tokens_out
         text = _clean(proposal.text)
 
-        report = audit_clue(text, secret, req.difficulty, embed)
+        # Off the event loop: the embedder may do a network call (OpenAI).
+        report = await asyncio.to_thread(audit_clue, text, secret, req.difficulty, embed)
         last_report = report
         if report.passed:
             return ClueResult(
@@ -109,7 +114,7 @@ async def produce_clue(
             )
         violations = report.violations
 
-    text, report = safe_fallback(req.category, secret, embed)
+    text, report = await asyncio.to_thread(safe_fallback, req.category, secret, embed)
     return ClueResult(
         text=text,
         attempts=MAX_RETRIES + 1,

@@ -16,7 +16,7 @@ from collections.abc import Awaitable, Callable
 
 from server.ai.clue_agent import ClueProposal, ClueRequest, ClueResult, produce_clue
 from server.ai.suspicion import VoteDecision, choose_vote
-from server.embeddings import EmbedFn, stub_embed
+from server.embeddings import EmbedFn, get_embedder
 from server.llm import DEFAULT_MODEL_ID
 from server.state import GameState
 
@@ -56,10 +56,12 @@ def default_propose_factory(model: str) -> ProposeFn:
 class AIRuntime:
     def __init__(
         self,
-        embed: EmbedFn = stub_embed,
+        embed: EmbedFn | None = None,
         propose_factory: ProposeFactory = default_propose_factory,
     ) -> None:
-        self.embed = embed
+        # OpenAI when OPENAI_API_KEY is set, else the deterministic stub.
+        # Tests pass embed=stub_embed explicitly to stay offline.
+        self.embed = embed if embed is not None else get_embedder()
         self._propose_factory = propose_factory
         self.model = os.environ.get("MODEL_ID", DEFAULT_MODEL_ID)
         self._precomputed: dict[tuple[str, int], dict[str, asyncio.Task[ClueResult]]] = {}
@@ -69,11 +71,13 @@ class AIRuntime:
 
     def _request(self, state: GameState, player_id: str) -> ClueRequest:
         is_imposter = player_id in state.get("imposter_ids", [])
+        # The audit always needs the real word; the imposter's prompt won't
+        # include it (produce_clue keeps it out of the imposter's context).
         return ClueRequest(
             role="imposter" if is_imposter else "civilian",
             category=state["category"],
             difficulty=state.get("difficulty", "easy"),
-            secret_word=None if is_imposter else state["secret_word"],
+            secret_word=state["secret_word"],
         )
 
     async def clue_for(self, state: GameState, player_id: str) -> ClueResult:

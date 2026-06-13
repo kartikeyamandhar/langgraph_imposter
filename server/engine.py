@@ -135,7 +135,8 @@ class GameEngine:
             voted = set(state.get("votes", {}))
             for p in state["players"]:
                 if p["is_ai"] and p["id"] not in voted:
-                    decision = self.ai.vote_for(state, p["id"])
+                    # Off the event loop: suspicion embeds every clue (OpenAI).
+                    decision = await asyncio.to_thread(self.ai.vote_for, state, p["id"])
                     await self._record_vote(room, p["id"], decision.rationale, state["round_no"])
                     return {"type": "vote", "actor": p["id"], "target": decision.target}
 

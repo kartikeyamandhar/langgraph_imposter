@@ -7,7 +7,7 @@ from server.ai.clue_agent import (
     produce_clue,
     safe_fallback,
 )
-from server.audit import audit_clue
+from server.audit import DIFFICULTY_BANDS, audit_clue
 from server.embeddings import stub_embed
 from server.tests.helpers import band_embed
 
@@ -28,7 +28,8 @@ class scripted_propose:
 
 def passing_embed(secret: str):
     """Embed so that the literal clue 'breakfast' lands inside the easy band."""
-    return band_embed(secret, "breakfast", 0.4)
+    low, high = DIFFICULTY_BANDS["easy"]
+    return band_embed(secret, "breakfast", (low + high) / 2)
 
 
 class TestProduceClue:
@@ -68,9 +69,24 @@ class TestProduceClue:
         leaks = [v for v in report.violations if "contains" in v or "form of" in v or "rhymes" in v]
         assert leaks == []
 
-    async def test_imposter_never_sees_word(self):
-        # The imposter request carries no secret word; produce_clue must cope.
-        req = ClueRequest("imposter", "Food", "easy", None)
-        propose = scripted_propose(["breakfast"])
-        result = await produce_clue(req, propose, passing_embed(""))
-        assert result.text  # produced something legal
+    async def test_imposter_prompt_omits_word_but_audit_uses_it(self):
+        # The imposter's prompt must never contain the word, but the audit
+        # still checks the real word. A clean proposal should NOT fall back.
+        req = ClueRequest("imposter", "Food", "easy", "pancake")
+        seen_prompts: list[str] = []
+
+        async def spy_propose(system: str, user: str):
+            seen_prompts.append(user)
+            return ClueProposal(text="breakfast", tokens_in=4, tokens_out=2)
+
+        result = await produce_clue(req, spy_propose, passing_embed("pancake"))
+        assert not result.fell_back
+        assert result.text == "breakfast"
+        assert all("pancake" not in p.lower() for p in seen_prompts)
+
+    async def test_imposter_does_not_autofallback(self):
+        # Regression: an imposter (no word in prompt) used to fail every audit
+        # because the empty secret matched as containment -> always "no comment".
+        req = ClueRequest("imposter", "Food", "easy", "pancake")
+        result = await produce_clue(req, scripted_propose(["breakfast"]), passing_embed("pancake"))
+        assert not result.fell_back

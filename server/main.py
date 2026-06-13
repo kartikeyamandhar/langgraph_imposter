@@ -115,6 +115,20 @@ async def healthz() -> dict[str, str]:
     return {"status": "ok"}
 
 
+@app.get("/admin/similarity")
+async def admin_similarity(a: str, b: str):
+    """Cosine similarity between two strings under the active embedder. Handy
+    for calibrating the audit bands against the embedder's actual distribution."""
+    import asyncio
+
+    from server.audit import DIFFICULTY_BANDS
+    from server.embeddings import get_embedder, similarity
+
+    embed = get_embedder()
+    sim = await asyncio.to_thread(similarity, embed, a, b)
+    return {"a": a, "b": b, "similarity": round(sim, 4), "bands": DIFFICULTY_BANDS}
+
+
 @app.get("/admin/cost")
 async def admin_cost(room: str | None = None):
     """Cost + reliability rollup for the dashboard. Reads telemetry only."""

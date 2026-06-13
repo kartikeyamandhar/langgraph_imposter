@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque } from "next/font/google";
 import "./globals.css";
 
-// Display face for the secret word, verdicts, and scores only — at most
+// Display face for the secret word, verdicts, and scores only, at most
 // once per screen. Everything else stays on the system-ui stack.
 const bricolage = Bricolage_Grotesque({
   subsets: ["latin"],

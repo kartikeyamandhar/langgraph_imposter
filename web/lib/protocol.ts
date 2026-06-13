@@ -1,7 +1,7 @@
 /**
  * WebSocket protocol: typed JSON envelope {type, room, seq, payload}.
  *
- * Hand-mirrored from server/protocol.py — change both in the same commit
+ * Hand-mirrored from server/protocol.py. Change both in the same commit
  * and say so in the commit message.
  */
 

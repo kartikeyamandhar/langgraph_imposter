@@ -1,7 +1,7 @@
 import type { Phase } from "./protocol";
 
 /** The accent rotation is the navigation: each phase recolors the timer ring,
- *  primary button, and header rule — nothing else. */
+ *  primary button, and header rule, nothing else. */
 export function phaseAccent(phase: Phase): string {
   switch (phase) {
     case "clue":

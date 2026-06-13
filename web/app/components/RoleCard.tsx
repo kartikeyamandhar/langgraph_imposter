@@ -32,22 +32,19 @@ export function RoleCard({ you, category }: { you: PrivateView; category: string
         <span>Hold to reveal</span>
       </div>
 
-      {/* Revealed face under an ink wipe */}
+      {/* Revealed face under an ink wipe. Opaque bg-ink so the wipe covers the
+          "Hold to reveal" hint rather than overlapping it. */}
       <div
-        className="absolute inset-0 grid place-items-center px-6 text-center"
+        className="absolute inset-0 grid place-items-center px-6 text-center bg-ink"
         style={{
-          clipPath: held
-            ? "inset(0 0 0 0)"
-            : reduced
-              ? "inset(0 0 0 100%)"
-              : "inset(0 0 0 100%)",
+          clipPath: held ? "inset(0 0 0 0)" : "inset(0 0 0 100%)",
           transition: reduced ? "none" : "clip-path 600ms cubic-bezier(0.4,0,0.2,1)",
         }}
       >
         {isImposter ? (
           <div>
             <p className="text-vote text-sm uppercase tracking-widest mb-2">You are the imposter</p>
-            <p className="text-bone/70">Category: {category ?? "—"}</p>
+            <p className="text-bone/70">Category: {category ?? "?"}</p>
             <p className="text-bone/50 text-sm mt-2">Blend in. You don&apos;t know the word.</p>
           </div>
         ) : (
@@ -55,7 +52,7 @@ export function RoleCard({ you, category }: { you: PrivateView; category: string
             <p className="text-lobby text-sm uppercase tracking-widest mb-2">
               {category ?? "Your word"}
             </p>
-            <p className="font-display text-4xl">{you.word ?? "—"}</p>
+            <p className="font-display text-4xl">{you.word ?? "?"}</p>
           </div>
         )}
       </div>

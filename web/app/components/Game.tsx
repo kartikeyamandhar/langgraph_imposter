@@ -83,7 +83,7 @@ function PhaseScreen({ state, me, send, accent }: ScreenProps) {
 }
 
 function name(pub: PublicState, id: string | null): string {
-  return pub.players.find((p) => p.id === id)?.name ?? "—";
+  return pub.players.find((p) => p.id === id)?.name ?? "?";
 }
 
 function PrimaryButton({
@@ -394,7 +394,7 @@ function Reveal({ state, me, send, accent }: ScreenProps) {
           </p>
           {r.guess && (
             <p className="text-bone/50 text-sm mt-1">
-              Guessed “{r.guess}” — {r.guess_correct ? "correct" : "wrong"}.
+              Guessed &quot;{r.guess}&quot;, {r.guess_correct ? "correct" : "wrong"}.
             </p>
           )}
         </div>

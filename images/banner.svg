@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 320" width="1200" height="320"
+     font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" role="img"
+     aria-label="Blindspot. One of you does not know the word.">
+  <defs>
+    <clipPath id="inkwipe">
+      <rect x="820" y="60" width="0" height="180" rx="16">
+        <animate attributeName="width" values="0;300;300;300;0"
+                 keyTimes="0;0.35;0.6;0.85;1" dur="6s" repeatCount="indefinite"/>
+      </rect>
+    </clipPath>
+  </defs>
+
+  <rect width="1200" height="320" rx="18" fill="#131A26"/>
+
+  <!-- The accent rule rotates through the phase palette, mirroring the game UI. -->
+  <rect x="0" y="0" width="1200" height="6" rx="3" fill="#4FB8A8">
+    <animate attributeName="fill"
+             values="#4FB8A8;#E8A33D;#D14B57;#8B7FD4;#4FB8A8" dur="8s" repeatCount="indefinite"/>
+  </rect>
+
+  <text x="80" y="150" font-size="86" font-weight="700" fill="#E9E4D8">Blindspot</text>
+  <text x="84" y="196" font-size="24" fill="#E9E4D8" opacity="0.6">One of you doesn't know the word.</text>
+
+  <!-- Phase pills: the accent rotation is the navigation. -->
+  <g font-size="15" font-weight="600" text-anchor="middle" fill="#131A26">
+    <rect x="84"  y="230" width="92" height="30" rx="15" fill="#4FB8A8"/><text x="130" y="250">lobby</text>
+    <rect x="186" y="230" width="92" height="30" rx="15" fill="#E8A33D"/><text x="232" y="250">clue</text>
+    <rect x="288" y="230" width="92" height="30" rx="15" fill="#D14B57"/><text x="334" y="250">vote</text>
+    <rect x="390" y="230" width="92" height="30" rx="15" fill="#8B7FD4"/><text x="436" y="250">reveal</text>
+  </g>
+
+  <!-- The signature element: press and hold to reveal, with a slow ink wipe. -->
+  <rect x="820" y="60" width="300" height="180" rx="16" fill="#0E141E" stroke="#E9E4D8" stroke-opacity="0.15"/>
+  <text x="970" y="118" font-size="14" letter-spacing="3" text-anchor="middle" fill="#4FB8A8">ANIMALS</text>
+  <text x="970" y="160" font-size="18" text-anchor="middle" fill="#E9E4D8" opacity="0.35">Hold to reveal</text>
+  <g clip-path="url(#inkwipe)">
+    <rect x="820" y="60" width="300" height="180" rx="16" fill="#0E141E"/>
+    <text x="970" y="118" font-size="14" letter-spacing="3" text-anchor="middle" fill="#4FB8A8">ANIMALS</text>
+    <text x="970" y="174" font-size="46" font-weight="700" text-anchor="middle" fill="#E9E4D8">penguin</text>
+  </g>
+</svg>
